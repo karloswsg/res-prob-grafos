@@ -1,5 +1,10 @@
 # Marco 1 - Modelagem: O Problema do Movimento do Cavalo
 
+## Histórico de Alterações
+| Versão | Data       | Descrição da Alteração |
+| :----- | :--------- | :--------------------- |
+| 1.0    | 17/08/2026 | Criação do documento   |
+
 ---
 
 ## Grupo A: Problema F (Movimentos do Cavalo | Beecrowd 1100)
@@ -25,7 +30,7 @@
 
 ## 3. Instância Pequena
 
-| Origem | Destino | Resultado Esperado                             | Observação do Teste    |
+| Origem | Destino | Resultado Esperado                             | Observação do Teste      |
 | :----- | :------ | :--------------------------------------------- | :----------------------- |
 | e2     | e4      | `To get from e2 to e4 takes 2 knight moves.` | Instância curta padrão |
 | a1     | h8      | `To get from a1 to h8 takes 6 knight moves.` | Extremos opostos         |
