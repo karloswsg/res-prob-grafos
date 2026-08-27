@@ -5,7 +5,7 @@
 | Versão | Data       | Descrição da Alteração |
 | :------ | :--------- | :--------------------- |
 | 1.0     | 27/08/2026 | Criação do documento: execução manual da DFS na instância 3×3, estados de visita, tempos, árvore de busca, alcançabilidade e análise de aplicabilidade |
-| 1.1     | 27/08/2026 | Padronização dos estados de visita para a marcação booleana `marked[]` adotada em aula |
+| 1.1     | 27/08/2026 | Padronização dos estados de visita para a marcação booleana `marked[]` |
 
 ---
 
