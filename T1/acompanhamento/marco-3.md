@@ -5,6 +5,7 @@
 | Versão | Data       | Descrição da Alteração |
 | :------ | :--------- | :--------------------- |
 | 1.0     | 27/08/2026 | Criação do documento: execução manual da DFS na instância 3×3, estados de visita, tempos, árvore de busca, alcançabilidade e análise de aplicabilidade |
+| 1.1     | 27/08/2026 | Padronização dos estados de visita para a marcação booleana `marked[]` adotada em aula |
 
 ---
 
@@ -28,26 +29,26 @@ Origem da busca: vértice **0**.
 
 ## 2. Execução Manual
 
-Cada linha é um passo do relógio. Dois tipos de evento: **descoberta** (o vértice entra em exploração) e **término** (o vértice conclui).
+Cada linha é um passo do relógio. Dois tipos de evento: **descoberta** (o vértice é visitado e marcado) e **término** (a recursão retorna dele, com todos os vizinhos verificados).
 
-| t  | Evento     | Vértice | Pilha (em exploração) | Observação                                   |
+| t  | Evento     | Vértice | Pilha de recursão     | Observação                                   |
 | :-: | :--------- | :-----: | :-------------------- | :------------------------------------------- |
 | 1  | descoberta | 0       | `0`                   | origem                                       |
 | 2  | descoberta | 5       | `0 5`                 | 1º vizinho de `0`                            |
-| 3  | descoberta | 6       | `0 5 6`               | `0` já em exploração, ignorado               |
+| 3  | descoberta | 6       | `0 5 6`               | `0` já marcado, ignorado                     |
 | 4  | descoberta | 1       | `0 5 6 1`             | 1º vizinho de `6`                            |
-| 5  | descoberta | 8       | `0 5 6 1 8`           | `6` já em exploração, ignorado               |
-| 6  | descoberta | 3       | `0 5 6 1 8 3`         | `1` já em exploração, ignorado               |
+| 5  | descoberta | 8       | `0 5 6 1 8`           | `6` já marcado, ignorado                     |
+| 6  | descoberta | 3       | `0 5 6 1 8 3`         | `1` já marcado, ignorado                     |
 | 7  | descoberta | 2       | `0 5 6 1 8 3 2`       | 1º vizinho de `3`                            |
-| 8  | descoberta | 7       | `0 5 6 1 8 3 2 7`     | `3` já em exploração, ignorado               |
-| 9  | término    | 7       | `0 5 6 1 8 3 2`       | vizinhos `0` e `2` já em exploração          |
+| 8  | descoberta | 7       | `0 5 6 1 8 3 2 7`     | `3` já marcado, ignorado                     |
+| 9  | término    | 7       | `0 5 6 1 8 3 2`       | vizinhos `0` e `2` já marcados               |
 | 10 | término    | 2       | `0 5 6 1 8 3`         | vizinhos esgotados                           |
 | 11 | término    | 3       | `0 5 6 1 8`           | vizinhos esgotados                           |
 | 12 | término    | 8       | `0 5 6 1`             | vizinhos esgotados                           |
 | 13 | término    | 1       | `0 5 6`               | vizinhos esgotados                           |
 | 14 | término    | 6       | `0 5`                 | vizinhos esgotados                           |
 | 15 | término    | 5       | `0`                   | vizinhos esgotados                           |
-| 16 | término    | 0       | `—`                   | `7` já concluído; busca encerrada            |
+| 16 | término    | 0       | `—`                   | `7` já marcado; busca encerrada              |
 
 Como o grafo é um ciclo, cada vértice possui exatamente um vizinho ainda não descoberto no momento da visita. A busca mergulha em sequência única (8 descobertas consecutivas) e só então retrocede (8 términos consecutivos).
 
@@ -55,23 +56,25 @@ Como o grafo é um ciclo, cada vértice possui exatamente um vizinho ainda não 
 
 ## 3. Estados de Visita, Tempos e Predecessores
 
-Cada vértice percorre três estados: **não visitado** → **em exploração** → **concluído** (equivalentes às marcações branco/cinza/preto). Um vértice em exploração é um vértice que permanece na pilha de recursão.
+Cada vértice possui um estado de visita registrado na marcação booleana `marked[v]`: **`true`** se o vértice foi visitado durante a busca, **`false`** caso contrário.
 
-| Vértice | Estado final  | `d[v]` (descoberta) | `f[v]` (término) | Predecessor `edgeTo[v]` |
-| :-----: | :------------ | :-----------------: | :--------------: | :---------------------: |
-| 0       | concluído     | 1                   | 16               | — (origem)              |
-| 5       | concluído     | 2                   | 15               | 0                       |
-| 6       | concluído     | 3                   | 14               | 5                       |
-| 1       | concluído     | 4                   | 13               | 6                       |
-| 8       | concluído     | 5                   | 12               | 1                       |
-| 3       | concluído     | 6                   | 11               | 8                       |
-| 2       | concluído     | 7                   | 10               | 3                       |
-| 7       | concluído     | 8                   | 9                | 2                       |
-| **4**   | **não visitado** | —                | —                | —                       |
+Os tempos registram os dois instantes da visita: `d[v]` é o instante em que o vértice é visitado e marcado; `f[v]` é o instante em que a recursão retorna dele, com todos os seus vizinhos já verificados.
+
+| Vértice | `marked[v]` | `d[v]` (descoberta) | `f[v]` (término) | Predecessor `edgeTo[v]` |
+| :-----: | :---------- | :-----------------: | :--------------: | :---------------------: |
+| 0       | `true`      | 1                   | 16               | — (origem)              |
+| 5       | `true`      | 2                   | 15               | 0                       |
+| 6       | `true`      | 3                   | 14               | 5                       |
+| 1       | `true`      | 4                   | 13               | 6                       |
+| 8       | `true`      | 5                   | 12               | 1                       |
+| 3       | `true`      | 6                   | 11               | 8                       |
+| 2       | `true`      | 7                   | 10               | 3                       |
+| 7       | `true`      | 8                   | 9                | 2                       |
+| **4**   | **`false`** | —                   | —                | —                       |
 
 Verificação: 8 vértices alcançados × 2 eventos = 16 tempos, distintos e no intervalo `1..16`. Em todos, `d[v] < f[v]`.
 
-**Aninhamento dos intervalos.** Os intervalos `[d[v], f[v]]` são todos aninhados, sem cruzamento. O aninhamento é visível na coluna *Pilha (em exploração)* da Seção 2: os vértices concluem na ordem inversa à de descoberta, consequência direta da pilha de recursão. O intervalo de `0` (`[1,16]`) contém todos os demais, confirmando que `0` é a raiz da árvore de busca.
+**Aninhamento dos intervalos.** Os intervalos `[d[v], f[v]]` são todos aninhados, sem cruzamento. O aninhamento é visível na coluna *Pilha de recursão* da Seção 2: os vértices concluem na ordem inversa à de descoberta, consequência direta da pilha de recursão. O intervalo de `0` (`[1,16]`) contém todos os demais, confirmando que `0` é a raiz da árvore de busca.
 
 ---
 
@@ -86,13 +89,13 @@ Reconstruída a partir dos predecessores:
 - 8 vértices alcançados, **7 arestas** na árvore (`V − 1`).
 - O grafo possui 8 arestas; portanto **1 aresta ficou fora**: a aresta `0–7`.
 
-A aresta `0–7` foi encontrada no tempo 8 (a partir de `7`, ao verificar `0`) e descartada, pois `0` estava em exploração. Aresta que aponta para um vértice ainda em exploração é uma **aresta de retorno**, e evidencia a existência de um ciclo no grafo — o que confirma que o grafo do cavalo não é acíclico.
+A aresta `0–7` foi encontrada no tempo 8 (a partir de `7`, ao verificar `0`) e descartada, pois `0` já estava marcado e ainda na pilha de recursão. Aresta que aponta para um vértice ainda na pilha é uma **aresta de retorno**, e evidencia a existência de um ciclo no grafo — o que confirma que o grafo do cavalo não é acíclico.
 
 ---
 
 ## 5. Alcançabilidade
 
-O vértice `4` permanece **não visitado** ao final da busca: nenhuma aresta incide sobre ele, pois todos os 8 saltos do cavalo a partir do centro do 3×3 caem fora do tabuleiro.
+O vértice `4` permanece **não marcado** (`marked[4] = false`) ao final da busca: nenhuma aresta incide sobre ele, pois todos os 8 saltos do cavalo a partir do centro do 3×3 caem fora do tabuleiro.
 
 A DFS responde corretamente, portanto, à pergunta *"existe caminho entre dois vértices?"*:
 
