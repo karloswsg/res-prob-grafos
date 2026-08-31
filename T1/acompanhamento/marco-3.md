@@ -6,6 +6,7 @@
 | :------ | :--------- | :--------------------- |
 | 1.0     | 27/08/2026 | Criação do documento: execução manual da DFS na instância 3×3, estados de visita, tempos, árvore de busca, alcançabilidade e análise de aplicabilidade |
 | 1.1     | 27/08/2026 | Padronização dos estados de visita para a marcação booleana `marked[]` |
+| 1.2     | 30/08/2026 | Substituição do contador único de tempos pelas posições de pré-ordem e pós-ordem, inclusão da verificação `d[v] + f[v] = 9` e da ressalva sobre árvores ramificadas |
 
 ---
 
@@ -29,26 +30,26 @@ Origem da busca: vértice **0**.
 
 ## 2. Execução Manual
 
-Cada linha é um passo do relógio. Dois tipos de evento: **descoberta** (o vértice é visitado e marcado) e **término** (a recursão retorna dele, com todos os vizinhos verificados).
+Cada linha é um passo da execução. Dois tipos de evento: **descoberta** (o vértice é visitado e marcado) e **término** (a recursão retorna dele, com todos os vizinhos verificados). Cada tipo de evento é numerado na sua própria sequência: as descobertas geram a pré-ordem, os términos geram a pós-ordem.
 
-| t  | Evento     | Vértice | Pilha de recursão     | Observação                                   |
-| :-: | :--------- | :-----: | :-------------------- | :------------------------------------------- |
-| 1  | descoberta | 0       | `0`                   | origem                                       |
-| 2  | descoberta | 5       | `0 5`                 | 1º vizinho de `0`                            |
-| 3  | descoberta | 6       | `0 5 6`               | `0` já marcado, ignorado                     |
-| 4  | descoberta | 1       | `0 5 6 1`             | 1º vizinho de `6`                            |
-| 5  | descoberta | 8       | `0 5 6 1 8`           | `6` já marcado, ignorado                     |
-| 6  | descoberta | 3       | `0 5 6 1 8 3`         | `1` já marcado, ignorado                     |
-| 7  | descoberta | 2       | `0 5 6 1 8 3 2`       | 1º vizinho de `3`                            |
-| 8  | descoberta | 7       | `0 5 6 1 8 3 2 7`     | `3` já marcado, ignorado                     |
-| 9  | término    | 7       | `0 5 6 1 8 3 2`       | vizinhos `0` e `2` já marcados               |
-| 10 | término    | 2       | `0 5 6 1 8 3`         | vizinhos esgotados                           |
-| 11 | término    | 3       | `0 5 6 1 8`           | vizinhos esgotados                           |
-| 12 | término    | 8       | `0 5 6 1`             | vizinhos esgotados                           |
-| 13 | término    | 1       | `0 5 6`               | vizinhos esgotados                           |
-| 14 | término    | 6       | `0 5`                 | vizinhos esgotados                           |
-| 15 | término    | 5       | `0`                   | vizinhos esgotados                           |
-| 16 | término    | 0       | `—`                   | `7` já marcado; busca encerrada              |
+| Passo | Evento     | Vértice | Ordem   | Pilha de recursão     | Observação                          |
+| :---: | :--------- | :-----: | :-----: | :-------------------- | :---------------------------------- |
+| 1     | descoberta | 0       | pré 1   | `0`                   | origem                              |
+| 2     | descoberta | 5       | pré 2   | `0 5`                 | 1º vizinho de `0`                   |
+| 3     | descoberta | 6       | pré 3   | `0 5 6`               | `0` já marcado, ignorado            |
+| 4     | descoberta | 1       | pré 4   | `0 5 6 1`             | 1º vizinho de `6`                   |
+| 5     | descoberta | 8       | pré 5   | `0 5 6 1 8`           | `6` já marcado, ignorado            |
+| 6     | descoberta | 3       | pré 6   | `0 5 6 1 8 3`         | `1` já marcado, ignorado            |
+| 7     | descoberta | 2       | pré 7   | `0 5 6 1 8 3 2`       | 1º vizinho de `3`                   |
+| 8     | descoberta | 7       | pré 8   | `0 5 6 1 8 3 2 7`     | `3` já marcado, ignorado            |
+| 9     | término    | 7       | pós 1   | `0 5 6 1 8 3 2`       | vizinhos `0` e `2` já marcados      |
+| 10    | término    | 2       | pós 2   | `0 5 6 1 8 3`         | vizinhos esgotados                  |
+| 11    | término    | 3       | pós 3   | `0 5 6 1 8`           | vizinhos esgotados                  |
+| 12    | término    | 8       | pós 4   | `0 5 6 1`             | vizinhos esgotados                  |
+| 13    | término    | 1       | pós 5   | `0 5 6`               | vizinhos esgotados                  |
+| 14    | término    | 6       | pós 6   | `0 5`                 | vizinhos esgotados                  |
+| 15    | término    | 5       | pós 7   | `0`                   | vizinhos esgotados                  |
+| 16    | término    | 0       | pós 8   | `—`                   | `7` já marcado; busca encerrada     |
 
 Como o grafo é um ciclo, cada vértice possui exatamente um vizinho ainda não descoberto no momento da visita. A busca mergulha em sequência única (8 descobertas consecutivas) e só então retrocede (8 términos consecutivos).
 
@@ -58,23 +59,32 @@ Como o grafo é um ciclo, cada vértice possui exatamente um vizinho ainda não 
 
 Cada vértice possui um estado de visita registrado na marcação booleana `marked[v]`: **`true`** se o vértice foi visitado durante a busca, **`false`** caso contrário.
 
-Os tempos registram os dois instantes da visita: `d[v]` é o instante em que o vértice é visitado e marcado; `f[v]` é o instante em que a recursão retorna dele, com todos os seus vizinhos já verificados.
+`d[v]` e `f[v]` registram a posição do vértice em cada uma das duas ordenações produzidas pela busca: `d[v]` é a posição na **pré-ordem**, a sequência em que os vértices são alcançados; `f[v]` é a posição na **pós-ordem**, a sequência em que são concluídos. Cada ordenação numera os 8 vértices alcançados de 1 a 8.
 
-| Vértice | `marked[v]` | `d[v]` (descoberta) | `f[v]` (término) | Predecessor `edgeTo[v]` |
-| :-----: | :---------- | :-----------------: | :--------------: | :---------------------: |
-| 0       | `true`      | 1                   | 16               | — (origem)              |
-| 5       | `true`      | 2                   | 15               | 0                       |
-| 6       | `true`      | 3                   | 14               | 5                       |
-| 1       | `true`      | 4                   | 13               | 6                       |
-| 8       | `true`      | 5                   | 12               | 1                       |
-| 3       | `true`      | 6                   | 11               | 8                       |
-| 2       | `true`      | 7                   | 10               | 3                       |
-| 7       | `true`      | 8                   | 9                | 2                       |
-| **4**   | **`false`** | —                   | —                | —                       |
+| Vértice | `marked[v]` | `d[v]` (pré-ordem) | `f[v]` (pós-ordem) | Predecessor `edgeTo[v]` |
+| :-----: | :---------- | :----------------: | :----------------: | :---------------------: |
+| 0       | `true`      | 1                  | 8                  | — (origem)              |
+| 5       | `true`      | 2                  | 7                  | 0                       |
+| 6       | `true`      | 3                  | 6                  | 5                       |
+| 1       | `true`      | 4                  | 5                  | 6                       |
+| 8       | `true`      | 5                  | 4                  | 1                       |
+| 3       | `true`      | 6                  | 3                  | 8                       |
+| 2       | `true`      | 7                  | 2                  | 3                       |
+| 7       | `true`      | 8                  | 1                  | 2                       |
+| **4**   | **`false`** | —                  | —                  | —                       |
 
-Verificação: 8 vértices alcançados × 2 eventos = 16 tempos, distintos e no intervalo `1..16`. Em todos, `d[v] < f[v]`.
+As duas ordenações completas:
 
-**Aninhamento dos intervalos.** Os intervalos `[d[v], f[v]]` são todos aninhados, sem cruzamento. O aninhamento é visível na coluna *Pilha de recursão* da Seção 2: os vértices concluem na ordem inversa à de descoberta, consequência direta da pilha de recursão. O intervalo de `0` (`[1,16]`) contém todos os demais, confirmando que `0` é a raiz da árvore de busca.
+```
+pré-ordem  (por d[v]):   0  5  6  1  8  3  2  7
+pós-ordem  (por f[v]):   7  2  3  8  1  6  5  0
+```
+
+**Verificação.** Nesta instância vale `d[v] + f[v] = 9` para todos os oito vértices alcançados. A identidade decorre de a pós-ordem ser exatamente o inverso da pré-ordem: o `k`-ésimo vértice alcançado é o `(9 − k)`-ésimo a concluir. Qualquer erro no rastreio quebraria a soma em alguma linha.
+
+**Ressalva.** A simetria entre as duas ordenações decorre da forma da árvore de busca, que aqui é um caminho sem ramificação: a busca desce em sequência única e retorna desfazendo na ordem contrária. Em uma árvore que ramifique, as ordenações não são simétricas — um vértice de um ramo posterior é concluído somente após todo o ramo anterior, ainda que tenha sido alcançado depois dele.
+
+Independentemente do formato da árvore, a origem ocupa sempre a última posição da pós-ordem, pois sua chamada só retorna quando todas as chamadas aninhadas já retornaram. É o que se observa em `f[0] = 8`. Simetricamente, o vértice `7` ocupa a última posição da pré-ordem e a primeira da pós-ordem: foi o último a ser alcançado e o primeiro a concluir, por estar no fundo do mergulho e ter ambos os vizinhos já marcados.
 
 ---
 
