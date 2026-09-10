@@ -12,8 +12,6 @@ import sys
 from collections import deque
 
 class Graph:
-    """Lista de adjacencia. Adaptado de algs4.graph (Bag trocado por list)."""
-
     def __init__(self, V):
         self.V = V
         self.E = 0
@@ -32,11 +30,9 @@ SALTOS = [(1, 2), (2, 1), (2, -1), (1, -2),
           (-1, -2), (-2, -1), (-2, 1), (-1, 2)]
 
 def id_vertice(coluna, linha):
-    """Converte (coluna, linha) em indice 0..63."""
     return linha * N + coluna
 
 def constroi_tabuleiro():
-    """Gera o grafo do cavalo 8x8 pela regra de movimento."""
     G = Graph(N * N)
     for linha in range(N):
         for coluna in range(N):
@@ -52,8 +48,6 @@ def constroi_tabuleiro():
 G = constroi_tabuleiro()
 
 class BreadthFirstPaths:
-    """Adaptado de algs4.breadth_first_paths, com dist_to acrescentado."""
-
     def __init__(self, G, s):
         self.marked = [False] * G.V
         self.edge_to = [-1] * G.V
@@ -78,7 +72,6 @@ class BreadthFirstPaths:
         return self.marked[v]
 
 def le_casa(texto):
-    """Converte 'e2' em indice 0..63."""
     coluna = ord(texto[0]) - ord('a')
     linha = int(texto[1]) - 1
     return id_vertice(coluna, linha)
