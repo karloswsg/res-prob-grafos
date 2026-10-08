@@ -21,13 +21,13 @@
 
 **Emparelhamento perfeito em grafo bipartido.**
 
-Conforme o Marco 1, cada jogador é desdobrado em duas cópias — **atirador** e **alvo** — e cada par de visão `a–b` gera as arestas `a_atirador → b_alvo` e `b_atirador → a_alvo`.
+Conforme o Marco 1, cada jogador é desdobrado em duas cópias, **atirador** e **alvo**, e cada par de visão `a–b` gera as arestas `a_atirador → b_alvo` e `b_atirador → a_alvo`.
 
 A organização pedida existe se, e somente se, esse grafo admitir emparelhamento com os `n` atiradores e os `n` alvos todos emparelhados.
 
 ### Critério
 
-O emparelhamento é máximo quando não existe **caminho aumentante** — caminho que parte de um atirador livre, termina em um alvo livre e alterna arestas fora e dentro do emparelhamento. Invertendo o papel das arestas ao longo dele, a cardinalidade cresce em uma unidade.
+O emparelhamento é máximo quando não existe **caminho aumentante**, isto é, caminho que parte de um atirador livre, termina em um alvo livre e alterna arestas fora e dentro do emparelhamento. Invertendo o papel das arestas ao longo dele, a cardinalidade cresce em uma unidade.
 
 A estratégia adotada busca esses caminhos **em fases**: cada fase calcula as distâncias mínimas por BFS a partir de **todos** os atiradores livres simultaneamente, e em seguida extrai, por DFS, o maior conjunto de caminhos aumentantes **mínimos e disjuntos** disponível. O processo termina quando uma fase não encontra nenhum caminho.
 
@@ -38,7 +38,7 @@ A estratégia adotada busca esses caminhos **em fases**: cada fase calcula as di
 | cardinalidade final `= n` | para cada jogador `i`, imprimir `mate_atirador[i]` |
 | cardinalidade final `< n` | `Impossible` |
 
-Duas condições permitem responder `Impossible` antecipadamente: jogador isolado, e componente conexa de tamanho 1 — detectável pelo `CC` tratado no Marco 2.
+Duas condições permitem responder `Impossible` antecipadamente: jogador isolado, e componente conexa de tamanho 1, detectável pelo `CC` tratado no Marco 2.
 
 ---
 
@@ -69,7 +69,7 @@ A `algs4-py` **não possui implementação de emparelhamento**. As disponíveis 
 
 ### Justificativa da escolha
 
-Ambas as implementações de emparelhamento da biblioteca resolvem o problema e reconhecem a mesma propriedade. A diferença está no custo: `BipartiteMatching` executa `O(V)` buscas, uma por caminho aumentante, resultando em `O(V·E)`; `HopcroftKarp` agrupa caminhos mínimos disjuntos por fase e precisa de `O(√V)` fases, resultando em `O(E√V)`.
+Ambas as implementações de emparelhamento da biblioteca resolvem o problema e reconhecem a mesma propriedade. A diferença está no custo: `BipartiteMatching` executa `O(V)` buscas, uma por caminho aumentante, resultando em `O(V·E)`. O `HopcroftKarp` agrupa caminhos mínimos disjuntos por fase e precisa de `O(√V)` fases, resultando em `O(E√V)`.
 
 Como a solução será escrita em Python, cujo custo por operação é consideravelmente superior ao de Java, a margem de tempo é menor do que a sugerida pelo limite da plataforma. A versão por fases é, portanto, a escolha adequada para este problema.
 
@@ -77,7 +77,7 @@ Como a solução será escrita em Python, cujo custo por operação é considera
 
 **1. Tradução de Java para Python.** Não há equivalente na `algs4-py`; a lógica das fases e da extração de caminhos é preservada.
 
-**2. Descarte do `BipartiteX`.** A referência **detecta** a bipartição antes de emparelhar. Na modelagem adotada a bipartição é **construída** por desdobramento de papéis e já é conhecida — não há o que detectar.
+**2. Descarte do `BipartiteX`.** A referência **detecta** a bipartição antes de emparelhar. Na modelagem adotada a bipartição é **construída** por desdobramento de papéis e já é conhecida, portanto não há o que detectar.
 
 **3. Simplificação de `isResidualGraphEdge` e `isLevelGraphEdge`.** Na referência, os `2n` vértices convivem em um único `Graph`, e essas funções decidem se uma aresta pode ser atravessada e se ela pertence ao grafo de níveis. Na adaptação, atiradores e alvos ocupam **vetores separados** sobre os mesmos índices, de modo que o sentido da travessia é implícito; resta apenas a comparação de níveis.
 
@@ -96,7 +96,7 @@ Trata-se de uma divergência deliberada em relação à referência. O `Hopcroft
 | `HopcroftKarp.java` | Adaptação |
 | :--- | :--- |
 | `mate[]` | `mate_atirador[]` e `mate_alvo[]` |
-| `distTo[]` | `dist[]` — nível de cada atirador na fase |
+| `distTo[]` | `dist[]`, nível de cada atirador na fase |
 | `marked[]` | implícito em `dist[] != ∞` |
 | `cardinality` | contagem de atiradores emparelhados |
 | `hasAugmentingPath()` | BFS de fase |
@@ -145,9 +145,9 @@ Estado inicial: tudo não emparelhado, cardinalidade `0`.
 dist = [0, 0, 0, 0, 0, 0]
 ```
 
-Como existem alvos livres adjacentes a atiradores de nível 0, os caminhos aumentantes mínimos desta fase têm **comprimento 1** — uma única aresta, de atirador livre para alvo livre.
+Como existem alvos livres adjacentes a atiradores de nível 0, os caminhos aumentantes mínimos desta fase têm **comprimento 1**: uma única aresta, de atirador livre para alvo livre.
 
-**DFS — extração dos caminhos disjuntos.**
+**DFS: extração dos caminhos disjuntos.**
 
 | Atirador | Primeiro alvo livre | Decisão |
 | :-: | :--- | :--- |
@@ -175,9 +175,9 @@ Os atiradores `3` e `4` permanecem livres: ambos só enxergam `1` e `2`, cujos a
 dist = [1, 1, 0, 0, ∞, ∞]
 ```
 
-Os atiradores `5` e `6` ficam em `∞`: estão em outra componente, inalcançáveis a partir dos livres. A BFS encontra alvos livres (`3` e `4`) no nível seguinte, de modo que os caminhos mínimos desta fase têm **comprimento 3**.
+Os atiradores `5` e `6` ficam em `∞`, pois estão em outra componente e são inalcançáveis a partir dos livres. A BFS encontra alvos livres (`3` e `4`) no nível seguinte, de modo que os caminhos mínimos desta fase têm **comprimento 3**.
 
-**DFS — extração dos caminhos disjuntos.**
+**DFS: extração dos caminhos disjuntos.**
 
 **Caminho a partir de `3`:**
 
@@ -202,7 +202,7 @@ mate_atirador = [4, 3, 1, 2, 6, 5]
 caminhos na fase: 2        cardinalidade: 6
 ```
 
-Os dois caminhos têm o mesmo comprimento e **não compartilham vértice algum** — por isso foram extraídos na mesma fase.
+Os dois caminhos têm o mesmo comprimento e **não compartilham vértice algum**, e por isso foram extraídos na mesma fase.
 
 ---
 
@@ -221,7 +221,7 @@ Os dois caminhos têm o mesmo comprimento e **não compartilham vértice algum**
 5
 ```
 
-Verificação: os alvos `4, 3, 1, 2, 6, 5` são todos distintos — cada jogador recebe exatamente um disparo. E cada disparo respeita a visão: `1–4` ✓, `2–3` ✓, `3–1` ✓, `4–2` ✓, `5–6` ✓, `6–5` ✓.
+Verificação: os alvos `4, 3, 1, 2, 6, 5` são todos distintos, logo cada jogador recebe exatamente um disparo. E cada disparo respeita a visão: `1–4` ✓, `2–3` ✓, `3–1` ✓, `4–2` ✓, `5–6` ✓, `6–5` ✓.
 
 ### Decisões relevantes do algoritmo
 
@@ -229,7 +229,7 @@ Na Fase 2, o atirador `2` **já estava emparelhado** e ainda assim trocou de alv
 
 O vetor `dist[]` cumpre dois papéis: estabelece o nível de cada atirador, restringindo a DFS a arestas que avançam exatamente um nível, e serve como marcação de visita, impedindo reexploração dentro da mesma fase.
 
-**Ponto de partida das buscas.** As buscas desta adaptação partem dos **atiradores** ainda livres. A referência parte dos **alvos**, pois o `BipartiteX` atribui a cor correspondente àquela partição. A escolha é simétrica e não altera o resultado — o problema aceita qualquer atribuição completa —, mas altera a ordem em que os caminhos aumentantes são encontrados. O rastreio acima segue a convenção da adaptação.
+**Ponto de partida das buscas.** As buscas desta adaptação partem dos **atiradores** ainda livres. A referência parte dos **alvos**, pois o `BipartiteX` atribui a cor correspondente àquela partição. A escolha é simétrica e não altera o resultado, pois o problema aceita qualquer atribuição completa, mas altera a ordem em que os caminhos aumentantes são encontrados. O rastreio acima segue a convenção da adaptação.
 
 **Atribuições cíclicas.** A solução não exige que os disparos sejam recíprocos. Em um triângulo de visibilidade entre três jogadores, por exemplo, a atribuição `1 → 2 → 3 → 1` é válida: cada jogador atira uma vez e é atingido uma vez, sem que nenhum par atire mutuamente. O emparelhamento ocorre entre as cópias de atirador e de alvo, e não entre jogadores.
 
@@ -251,15 +251,15 @@ A instância exigiu **duas fases**. A versão que busca um caminho por vez teria
 
 O limite de `O(√V)` fases decorre de uma propriedade do algoritmo: o comprimento do menor caminho aumentante cresce a cada fase. Após `√V` fases, o emparelhamento corrente já está a no máximo `√V` unidades do máximo, e cada fase restante acrescenta ao menos uma unidade.
 
-### Memória — representação do grafo
+### Memória: representação do grafo
 
 | Estrutura | Custo |
 | :--- | :--- |
 | Lista de adjacência | `O(V + E)` |
 
-São `V` listas, uma por jogador — custo pago mesmo sem nenhuma aresta — e cada par de visão é armazenado duas vezes, uma em cada extremidade, totalizando `2E` entradas.
+São `V` listas, uma por jogador, custo pago mesmo sem nenhuma aresta, e cada par de visão é armazenado duas vezes, uma em cada extremidade, totalizando `2E` entradas.
 
-### Memória — auxiliar do algoritmo
+### Memória: auxiliar do algoritmo
 
 | Estrutura | Custo |
 | :--- | :--- |
