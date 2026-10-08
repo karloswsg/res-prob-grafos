@@ -16,17 +16,11 @@ O código-fonte deste repositório é implementado em Python.
 ## Estrutura
 
 ```
-T1/
-├── acompanhamento/   # Registros de progresso e andamento do trabalho
-├── apresentacao/     # Materiais de apresentação
-├── dados/             # Bases de dados e entradas utilizadas
-├── evidencias/        # Evidências de execução, testes e resultados
-└── src/               # Código-fonte
-
-T2/
-├── acompanhamento/   
-├── apresentacao/   
-├── dados/           
-├── evidencias/
-└── src/
+.
+└── T{1,2,3}/
+    ├── acompanhamento/   # Registros de progresso e andamento do trabalho
+    ├── apresentacao/     # Materiais de apresentação
+    ├── dados/            # Bases de dados e entradas utilizadas
+    ├── evidencias/       # Evidências de execução, testes e resultados
+    └── src/              # Código-fonte
 ```
