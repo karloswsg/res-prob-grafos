@@ -10,6 +10,7 @@ Este repositório é dedicado à resolução de problemas envolvendo **grafos**,
 | Maria Eduarda Coutinho Angelim | 2324319    |
 
 ## Linguagem
+
 O código-fonte deste repositório é implementado em Python.
 
 ## Estrutura
@@ -21,4 +22,11 @@ T1/
 ├── dados/             # Bases de dados e entradas utilizadas
 ├── evidencias/        # Evidências de execução, testes e resultados
 └── src/               # Código-fonte
+
+T2/
+├── acompanhamento/   
+├── apresentacao/   
+├── dados/           
+├── evidencias/
+└── src/
 ```
