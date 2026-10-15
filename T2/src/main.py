@@ -1,26 +1,5 @@
-"""
-Hopcroft-Karp traduzido de algs4-java/HopcroftKarp.java
-
-Modelagem:
-  cada jogador vira DUAS copias, pois exerce dois papeis independentes:
-    atirador i -> vertice  i        (lado L, cor True)
-    alvo     j -> vertice  n + j    (lado R, cor False)
-  cada par de visao "a b" gera DUAS arestas, pois a visao e mutua:
-    a_atirador -- b_alvo     e     b_atirador -- a_alvo
-  nunca existe aresta i -- n+i: um jogador nao atira em si mesmo.
-
-Relacao com fluxo:
-  toda aresta tem capacidade 1. Aresta emparelhada esta SATURADA;
-  aresta nao emparelhada tem RESIDUO. is_residual_graph_edge testa isso.
-"""
-
 import sys
 from collections import deque
-
-
-# =============================================================================
-# BLOCO 1 - GRAFO (equivale a algs4.Graph)
-# =============================================================================
 
 class Graph:
     """Grafo nao orientado por lista de adjacencia."""
@@ -38,11 +17,6 @@ class Graph:
     def adj(self, v):
         return self._adj[v]
 
-
-# =============================================================================
-# BLOCO 2 - CONSTRUCAO DO GRAFO BIPARTIDO (desdobramento dos papeis)
-# =============================================================================
-
 def constroi_grafo_bipartido(n, pares):
     """Monta o grafo com 2n vertices a partir dos pares de visao.
 
@@ -51,18 +25,11 @@ def constroi_grafo_bipartido(n, pares):
     """
     G = Graph(2 * n)
     for a, b in pares:
-        # a enxerga b, logo a pode atirar em b
-        if a != b:                      # restricao: ninguem atira em si mesmo
+        if a != b:                      
             G.add_edge(a, n + b)
-        # a visao e mutua, logo b tambem pode atirar em a
         if b != a:
             G.add_edge(b, n + a)
     return G
-
-
-# =============================================================================
-# BLOCO 3 - BIPARTICAO (substitui algs4.BipartiteX)
-# =============================================================================
 
 class Biparticao:
     """Cor de cada vertice.
@@ -81,11 +48,6 @@ class Biparticao:
            False = alvo     (lado R)"""
         return v < self.n
 
-
-# =============================================================================
-# BLOCO 4 - HOPCROFT-KARP
-# =============================================================================
-
 class HopcroftKarp:
     """Emparelhamento maximo em grafo bipartido, por fases."""
 
@@ -102,49 +64,33 @@ class HopcroftKarp:
         # mate[v] = -1 se v nao esta emparelhado
         self.mate = [self.UNMATCHED] * self.V
 
-        self.marked = None      # marked[v] = v e alcancavel por caminho alternante
-        self.dist_to = None     # dist_to[v] = nivel de v no grafo de niveis
+        self.marked = None    
+        self.dist_to = None     
 
-        # ---------------------------------------------------------------
-        # LACO DE FASES
-        # enquanto a BFS disser que ainda existe caminho aumentante,
-        # a DFS colhe varios caminhos minimos disjuntos naquela fase.
-        # ---------------------------------------------------------------
         while self._has_augmenting_path():
-
-            # proximo[v] guarda qual vizinho de v ainda nao foi testado.
-            # A versao recursiva fazia isso sozinha, no "for".
-            # Com pilha explicita, e preciso guardar a posicao a mao.
             proximo = [0] * self.V
 
             for s in range(self.V):
-                # so inicia por atirador (cor True) ainda nao emparelhado
                 if self._is_matched(s) or not self.bipartition.color(s):
                     continue
-
-                # -------------------------------------------------------
-                # DFS NAO RECURSIVA, com o caminho visivel na pilha
-                # -------------------------------------------------------
+                  
                 path = [s]
                 while path:
-                    v = path[-1]                     # topo, sem retirar
+                    v = path[-1]                     
 
                     if proximo[v] >= len(self.G.adj(v)):
-                        path.pop()                   # RECUA: acabaram os vizinhos
+                        path.pop()                  
                         continue
 
                     w = self.G.adj(v)[proximo[v]]
                     proximo[v] += 1
 
                     if not self._is_level_graph_edge(v, w):
-                        continue                     # aresta fora do grafo de niveis
+                        continue                     
 
-                    path.append(w)                   # AVANCA
+                    path.append(w)                   
 
                     if not self._is_matched(w):
-                        # CAMINHO AUMENTANTE ENCONTRADO.
-                        # Neste ponto, "path" contem o caminho inteiro.
-                        # Inverter = percorrer a pilha em pares e trocar os mates.
                         while path:
                             x = path.pop()
                             y = path.pop()
@@ -152,9 +98,6 @@ class HopcroftKarp:
                             self.mate[y] = x
                         self.cardinality += 1
 
-    # -------------------------------------------------------------------
-    # BLOCO 4.1 - RESIDUO (o conceito de fluxo dentro do algoritmo)
-    # -------------------------------------------------------------------
     def _is_residual_graph_edge(self, v, w):
         """A aresta v-w pode ser atravessada no sentido v -> w?
 
@@ -171,20 +114,10 @@ class HopcroftKarp:
             return True
         return False
 
-    # -------------------------------------------------------------------
-    # BLOCO 4.2 - GRAFO DE NIVEIS
-    # -------------------------------------------------------------------
     def _is_level_graph_edge(self, v, w):
-        """A aresta v-w avanca exatamente um nivel E tem residuo?
-
-        E o que obriga a DFS a andar SO PARA FRENTE, garantindo que os
-        caminhos encontrados sejam os MINIMOS daquela fase.
-        """
         return self.dist_to[w] == self.dist_to[v] + 1 and self._is_residual_graph_edge(v, w)
 
-    # -------------------------------------------------------------------
-    # BLOCO 4.3 - BFS: MEDE os niveis, nao encontra caminho
-    # -------------------------------------------------------------------
+    
     def _has_augmenting_path(self):
         """BFS a partir de TODOS os atiradores livres ao mesmo tempo.
 
@@ -213,15 +146,10 @@ class HopcroftKarp:
                         self.marked[w] = True
                         if not self._is_matched(w):
                             achou = True
-                        # para de enfileirar depois de achar um alvo livre:
-                        # nenhum caminho mais longo interessa nesta fase
                         if not achou:
                             fila.append(w)
         return achou
 
-    # -------------------------------------------------------------------
-    # BLOCO 4.4 - CONSULTAS
-    # -------------------------------------------------------------------
     def _is_matched(self, v):
         return self.mate[v] != self.UNMATCHED
 
@@ -229,14 +157,8 @@ class HopcroftKarp:
         return self.cardinality
 
     def is_perfect(self):
-        """Na referencia: cardinality == min(V1, V2).
-        Aqui os dois lados tem tamanho n, logo basta comparar com n."""
         return self.cardinality == self.bipartition.n
-
-
-# =============================================================================
-# BLOCO 5 - LEITURA E SAIDA
-# =============================================================================
+      
 
 def main():
     dados = sys.stdin.buffer.read().split()
@@ -255,8 +177,6 @@ def main():
     if not hk.is_perfect():
         sys.stdout.write("Impossible\n")
     else:
-        # mate[i] guarda o vertice do ALVO, que vale n + jogador.
-        # Subtrai n para voltar ao numero do jogador, e soma 1 para a saida.
         saida = "\n".join(str(hk.mate[i] - n + 1) for i in range(n))
         sys.stdout.write(saida + "\n")
 
