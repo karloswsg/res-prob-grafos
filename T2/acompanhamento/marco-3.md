@@ -6,6 +6,7 @@
 | :------ | :--------- | :--------------------- |
 | 1.0     | 01/10/2026 | Criação do documento: propriedade estrutural, critério, referências do algs4, rastreio manual em fases e análise de complexidade |
 | 1.1     | 08/10/2026 | Explicitação do ponto de partida das buscas; registro da escolha estrutural em relação à referência; nota sobre atribuições cíclicas e sobre a modelagem equivalente por fluxo máximo |
+| 1.2     | 16/10/2026 | Revisão das adaptações: o grafo passa a ser construído com `2n` vértices em um único `Graph`, e as funções `isResidualGraphEdge` e `isLevelGraphEdge` são preservadas em vez de eliminadas; correspondência de estruturas e seção de memória atualizadas |
 
 ---
 
@@ -35,10 +36,10 @@ A estratégia adotada busca esses caminhos **em fases**: cada fase calcula as di
 
 | Situação | Saída |
 | :--- | :--- |
-| cardinalidade final `= n` | para cada jogador `i`, imprimir `mate_atirador[i]` |
+| cardinalidade final `= n` | para cada jogador `i`, imprimir `mate[i] - n + 1` |
 | cardinalidade final `< n` | `Impossible` |
 
-Duas condições permitem responder `Impossible` antecipadamente: jogador isolado, e componente conexa de tamanho 1, detectável pelo `CC` tratado no Marco 2.
+Um jogador isolado permite reconhecer `Impossible` de imediato: sua cópia de atirador não possui aresta alguma e nunca será emparelhada.
 
 ---
 
@@ -60,11 +61,10 @@ A `algs4-py` **não possui implementação de emparelhamento**. As disponíveis 
 
 | Referência | Papel | Decisão |
 | :--- | :--- | :--- |
-| `HopcroftKarp.java` | núcleo da estratégia | **adaptada** |
-| `graph.py` | lista de adjacência | **reaproveitada** |
-| `cc.py` | verificação antecipada de `Impossible` | **opcional** |
+| `HopcroftKarp.java` | núcleo da estratégia | **traduzida** |
+| `Graph.java` | lista de adjacência | **traduzida** |
+| `BipartiteX.java` | detecção de bipartição | **substituída** |
 | `BipartiteMatching.java` | mesma propriedade, versão mais simples | **não selecionada** |
-| `BipartiteX.java` | detecção de bipartição | **descartada** |
 | `AssignmentProblem.java` | emparelhamento com custos | **não se aplica** |
 
 ### Justificativa da escolha
@@ -75,34 +75,34 @@ Como a solução será escrita em Python, cujo custo por operação é considera
 
 ### Adaptações previstas
 
-**1. Tradução de Java para Python.** Não há equivalente na `algs4-py`; a lógica das fases e da extração de caminhos é preservada.
+**1. Tradução de Java para Python.** Não há equivalente na `algs4-py`. A estrutura da referência é preservada: grafo com `2n` vértices, laço de fases, BFS de níveis, DFS com pilha explícita e teste de resíduo.
 
-**2. Descarte do `BipartiteX`.** A referência **detecta** a bipartição antes de emparelhar. Na modelagem adotada a bipartição é **construída** por desdobramento de papéis e já é conhecida, portanto não há o que detectar.
+**2. Substituição do `BipartiteX`.** A referência **detecta** a bipartição percorrendo o grafo em busca de ciclo ímpar. Na modelagem adotada a bipartição é **construída** pelo desdobramento de papéis e já é conhecida de antemão, de modo que a verificação de cor reduz-se a comparar o índice do vértice com `n`.
 
-**3. Simplificação de `isResidualGraphEdge` e `isLevelGraphEdge`.** Na referência, os `2n` vértices convivem em um único `Graph`, e essas funções decidem se uma aresta pode ser atravessada e se ela pertence ao grafo de níveis. Na adaptação, atiradores e alvos ocupam **vetores separados** sobre os mesmos índices, de modo que o sentido da travessia é implícito; resta apenas a comparação de níveis.
+**3. Iterador substituído por vetor de índices.** A referência percorre a lista de adjacência com um `Iterator` por vértice, preservado entre iterações da DFS. Python não dispõe de estrutura equivalente sobre lista; um vetor de índices registra em que vizinho cada vértice parou, cumprindo o mesmo papel.
 
-**4. Desdobramento sem duplicar o grafo.** Mantém-se a lista de adjacência original de `n` vértices e dois vetores de correspondência, em vez de um grafo de `2n` vértices.
+**4. `inMinVertexCover` não implementado.** A referência calcula também a cobertura mínima de vértices, consequência do teorema de König. O problema não a exige.
 
-Trata-se de uma divergência deliberada em relação à referência. O `HopcroftKarp.java` mantém os `2n` vértices em um único `Graph` precisamente porque precisa da função `isResidualGraphEdge` para determinar, a partir do índice, em que sentido a aresta está sendo atravessada. Separando os papéis em vetores distintos, essa informação passa a estar na própria estrutura, e a função deixa de ser necessária. A lógica do algoritmo permanece idêntica.
+**5. Critério de perfeição.** `isPerfect()` compara a cardinalidade com o menor lado da bipartição; aqui os dois lados têm tamanho `n`, logo basta `cardinalidade == n`.
 
-**5. Descarte de `inMinVertexCover`.** A referência também calcula a cobertura mínima de vértices, consequência do teorema de König. O problema não a exige.
+**6. Leitura e saída.** Leitura de `n`, `m` e dos `m` pares; impressão de `n` linhas com o alvo de cada jogador, ou de `Impossible`.
 
-**6. Critério de perfeição.** `isPerfect()` compara a cardinalidade com o menor lado da bipartição; aqui os dois lados têm tamanho `n`, logo basta `cardinalidade == n`.
-
-**7. Leitura e saída.** Leitura de `n`, `m` e dos `m` pares; impressão de `n` linhas com o alvo de cada jogador, ou de `Impossible`.
+**O que foi preservado.** As funções `isResidualGraphEdge` e `isLevelGraphEdge` são mantidas como na referência. A primeira implementa a noção de capacidade residual: toda aresta tem capacidade 1, e uma aresta emparelhada está saturada. É ela que obriga o caminho a alternar entre arestas fora e dentro do emparelhamento. A segunda restringe a DFS às arestas que avançam exatamente um nível, garantindo que os caminhos encontrados sejam os mínimos da fase. A DFS é mantida com **pilha explícita**, também como na referência, o que torna o caminho aumentante completo visível em uma única variável no momento em que é encontrado.
 
 ### Correspondência de estruturas
 
-| `HopcroftKarp.java` | Adaptação |
+| `HopcroftKarp.java` | Tradução |
 | :--- | :--- |
-| `mate[]` | `mate_atirador[]` e `mate_alvo[]` |
-| `distTo[]` | `dist[]`, nível de cada atirador na fase |
-| `marked[]` | implícito em `dist[] != ∞` |
-| `cardinality` | contagem de atiradores emparelhados |
-| `hasAugmentingPath()` | BFS de fase |
-| `isLevelGraphEdge()` | comparação `dist[u] == dist[v] + 1` |
-| `isResidualGraphEdge()` | eliminado |
-| `inMinVertexCover[]` | eliminado |
+| `mate[]` | `mate[]`, tamanho `2n` |
+| `distTo[]` | `dist_to[]` |
+| `marked[]` | `marked[]` |
+| `cardinality` | `cardinality` |
+| `hasAugmentingPath()` | `_has_augmenting_path()` |
+| `isLevelGraphEdge()` | `_is_level_graph_edge()` |
+| `isResidualGraphEdge()` | `_is_residual_graph_edge()` |
+| `Iterator<Integer>[] adj` | vetor `next_edge[]` |
+| `BipartiteX` | classe `Bipartition` |
+| `inMinVertexCover[]` | não implementado |
 
 ---
 
@@ -129,9 +129,9 @@ Lista de adjacência (visão):
 
 | Estrutura | Significado |
 | :--- | :--- |
-| `mate_atirador[v]` | alvo em que o jogador `v` atira |
-| `mate_alvo[w]` | jogador que atira no alvo `w` |
-| `dist[v]` | nível do atirador `v` na fase corrente; `∞` se inalcançável |
+| `mate[v]` | vértice emparelhado com `v`; `-1` se livre |
+| `dist_to[v]` | nível de `v` na fase corrente; `∞` se inalcançável |
+| `path` | pilha com o caminho aumentante em construção |
 
 Estado inicial: tudo não emparelhado, cardinalidade `0`.
 
@@ -142,7 +142,7 @@ Estado inicial: tudo não emparelhado, cardinalidade `0`.
 **BFS.** Todos os seis atiradores estão livres, logo todos recebem `dist = 0`.
 
 ```text
-dist = [0, 0, 0, 0, 0, 0]
+dist_to (atiradores) = [0, 0, 0, 0, 0, 0]
 ```
 
 Como existem alvos livres adjacentes a atiradores de nível 0, os caminhos aumentantes mínimos desta fase têm **comprimento 1**: uma única aresta, de atirador livre para alvo livre.
@@ -159,7 +159,7 @@ Como existem alvos livres adjacentes a atiradores de nível 0, os caminhos aumen
 | 6 | `5` | emparelha `6 → 5` |
 
 ```text
-mate_atirador = [2, 1, –, –, 6, 5]
+mate (atiradores) = [2, 1, –, –, 6, 5]
 caminhos na fase: 4        cardinalidade: 4
 ```
 
@@ -172,7 +172,7 @@ Os atiradores `3` e `4` permanecem livres: ambos só enxergam `1` e `2`, cujos a
 **BFS.** Atiradores livres: `3` e `4`, com `dist = 0`. A busca avança: a partir de `3`, o alvo `1` está ocupado pelo atirador `2`, que recebe `dist = 1`; a partir de `4`, o alvo `2` está ocupado pelo atirador `1`, que recebe `dist = 1`.
 
 ```text
-dist = [1, 1, 0, 0, ∞, ∞]
+dist_to (atiradores) = [1, 1, 0, 0, ∞, ∞]
 ```
 
 Os atiradores `5` e `6` ficam em `∞`, pois estão em outra componente e são inalcançáveis a partir dos livres. A BFS encontra alvos livres (`3` e `4`) no nível seguinte, de modo que os caminhos mínimos desta fase têm **comprimento 3**.
@@ -182,7 +182,7 @@ Os atiradores `5` e `6` ficam em `∞`, pois estão em outra componente e são i
 **Caminho a partir de `3`:**
 
 ```text
-3 ──> alvo 1  (ocupado por 2, e dist[2] = dist[3] + 1 ✓)
+3 ──> alvo 1  (ocupado por 2, e dist_to[2] = dist_to[3] + 1 ✓)
       2 ──> alvo 3  (LIVRE)
 ```
 
@@ -191,14 +191,14 @@ Inversão: `2` passa a atirar em `3`; `3` assume o alvo `1`.
 **Caminho a partir de `4`:**
 
 ```text
-4 ──> alvo 2  (ocupado por 1, e dist[1] = dist[4] + 1 ✓)
+4 ──> alvo 2  (ocupado por 1, e dist_to[1] = dist_to[4] + 1 ✓)
       1 ──> alvo 4  (LIVRE)
 ```
 
 Inversão: `1` passa a atirar em `4`; `4` assume o alvo `2`.
 
 ```text
-mate_atirador = [4, 3, 1, 2, 6, 5]
+mate (atiradores) = [4, 3, 1, 2, 6, 5]
 caminhos na fase: 2        cardinalidade: 6
 ```
 
@@ -227,9 +227,9 @@ Verificação: os alvos `4, 3, 1, 2, 6, 5` são todos distintos, logo cada jogad
 
 Na Fase 2, o atirador `2` **já estava emparelhado** e ainda assim trocou de alvo. É o que distingue o caminho aumentante de uma busca por vaga livre: ele realoca escolhas anteriores em vez de apenas preencher lacunas.
 
-O vetor `dist[]` cumpre dois papéis: estabelece o nível de cada atirador, restringindo a DFS a arestas que avançam exatamente um nível, e serve como marcação de visita, impedindo reexploração dentro da mesma fase.
+O vetor `dist_to[]` cumpre dois papéis: estabelece o nível de cada atirador, restringindo a DFS a arestas que avançam exatamente um nível, e serve como marcação de visita, impedindo reexploração dentro da mesma fase.
 
-**Ponto de partida das buscas.** As buscas desta adaptação partem dos **atiradores** ainda livres. A referência parte dos **alvos**, pois o `BipartiteX` atribui a cor correspondente àquela partição. A escolha é simétrica e não altera o resultado, pois o problema aceita qualquer atribuição completa, mas altera a ordem em que os caminhos aumentantes são encontrados. O rastreio acima segue a convenção da adaptação.
+**Ponto de partida das buscas.** As buscas partem dos vértices da cor `True`, que nesta modelagem são os **atiradores**. A escolha do lado é simétrica e não altera a validade do resultado, pois o problema aceita qualquer atribuição completa, mas altera a ordem em que os caminhos aumentantes são encontrados.
 
 **Atribuições cíclicas.** A solução não exige que os disparos sejam recíprocos. Em um triângulo de visibilidade entre três jogadores, por exemplo, a atribuição `1 → 2 → 3 → 1` é válida: cada jogador atira uma vez e é atingido uma vez, sem que nenhum par atire mutuamente. O emparelhamento ocorre entre as cópias de atirador e de alvo, e não entre jogadores.
 
@@ -263,10 +263,10 @@ São `V` listas, uma por jogador, custo pago mesmo sem nenhuma aresta, e cada pa
 
 | Estrutura | Custo |
 | :--- | :--- |
-| `mate_atirador[]`, `mate_alvo[]` | `O(V)` |
-| `dist[]` | `O(V)` |
-| fila da BFS | `O(V)` |
-| pilha da DFS | `O(V)` |
+| `mate[]` | `O(V)` |
+| `marked[]`, `dist_to[]` | `O(V)` |
+| `next_edge[]` | `O(V)` |
+| fila da BFS e pilha `path` da DFS | `O(V)` |
 | **Total auxiliar** | **`O(V)`** |
 
 Nenhuma estrutura auxiliar cresce com o número de arestas: o algoritmo **percorre** as arestas, mas não armazena nenhuma.
@@ -275,7 +275,7 @@ Nenhuma estrutura auxiliar cresce com o número de arestas: o algoritmo **percor
 
 O consumo total é `O(V + E)`, mas a parcela dependente de `E` vem **exclusivamente da representação do grafo**. O algoritmo acrescenta apenas `O(V)`.
 
-A adaptação é ainda mais econômica que a referência, que constrói um grafo com `2n` vértices, enquanto aqui se mantêm `n` vértices e dois vetores de correspondência.
+A tradução preserva a estrutura da referência: o grafo possui `2n` vértices, e os vetores auxiliares têm o mesmo tamanho. Nesta notação, `V = 2n` e `E = 2m`.
 
 ---
 
