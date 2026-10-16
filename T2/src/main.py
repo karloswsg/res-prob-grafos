@@ -1,6 +1,7 @@
 import sys
 from collections import deque
 
+
 class Graph:
     """Grafo nao orientado por lista de adjacencia."""
 
@@ -17,21 +18,23 @@ class Graph:
     def adj(self, v):
         return self._adj[v]
 
-def constroi_grafo_bipartido(n, pares):
+
+def build_bipartite_graph(n, pairs):
     """Monta o grafo com 2n vertices a partir dos pares de visao.
 
     indices  0 .. n-1    -> atiradores (lado L)
     indices  n .. 2n-1   -> alvos      (lado R)
     """
     G = Graph(2 * n)
-    for a, b in pares:
-        if a != b:                      
+    for a, b in pairs:
+        if a != b:
             G.add_edge(a, n + b)
         if b != a:
             G.add_edge(b, n + a)
     return G
 
-class Biparticao:
+
+class Bipartition:
     """Cor de cada vertice.
 
     A referencia usa BipartiteX para DETECTAR a biparticao procurando
@@ -48,15 +51,16 @@ class Biparticao:
            False = alvo     (lado R)"""
         return v < self.n
 
+
 class HopcroftKarp:
     """Emparelhamento maximo em grafo bipartido, por fases."""
 
     UNMATCHED = -1
     INFINITY = float('inf')
 
-    def __init__(self, G, biparticao):
+    def __init__(self, G, bipartition):
         self.G = G
-        self.bipartition = biparticao
+        self.bipartition = bipartition
         self.V = G.V
         self.cardinality = 0
 
@@ -64,31 +68,31 @@ class HopcroftKarp:
         # mate[v] = -1 se v nao esta emparelhado
         self.mate = [self.UNMATCHED] * self.V
 
-        self.marked = None    
-        self.dist_to = None     
+        self.marked = None
+        self.dist_to = None
 
         while self._has_augmenting_path():
-            proximo = [0] * self.V
+            next_edge = [0] * self.V
 
             for s in range(self.V):
                 if self._is_matched(s) or not self.bipartition.color(s):
                     continue
-                  
+
                 path = [s]
                 while path:
-                    v = path[-1]                     
+                    v = path[-1]
 
-                    if proximo[v] >= len(self.G.adj(v)):
-                        path.pop()                  
+                    if next_edge[v] >= len(self.G.adj(v)):
+                        path.pop()
                         continue
 
-                    w = self.G.adj(v)[proximo[v]]
-                    proximo[v] += 1
+                    w = self.G.adj(v)[next_edge[v]]
+                    next_edge[v] += 1
 
                     if not self._is_level_graph_edge(v, w):
-                        continue                     
+                        continue
 
-                    path.append(w)                   
+                    path.append(w)
 
                     if not self._is_matched(w):
                         while path:
@@ -117,7 +121,6 @@ class HopcroftKarp:
     def _is_level_graph_edge(self, v, w):
         return self.dist_to[w] == self.dist_to[v] + 1 and self._is_residual_graph_edge(v, w)
 
-    
     def _has_augmenting_path(self):
         """BFS a partir de TODOS os atiradores livres ao mesmo tempo.
 
@@ -129,26 +132,26 @@ class HopcroftKarp:
         self.marked = [False] * self.V
         self.dist_to = [self.INFINITY] * self.V
 
-        fila = deque()
+        queue = deque()
         for v in range(self.V):
             if self.bipartition.color(v) and not self._is_matched(v):
-                fila.append(v)
+                queue.append(v)
                 self.marked[v] = True
                 self.dist_to[v] = 0
 
-        achou = False
-        while fila:
-            v = fila.popleft()
+        found = False
+        while queue:
+            v = queue.popleft()
             for w in self.G.adj(v):
                 if self._is_residual_graph_edge(v, w):
                     if not self.marked[w]:
                         self.dist_to[w] = self.dist_to[v] + 1
                         self.marked[w] = True
                         if not self._is_matched(w):
-                            achou = True
-                        if not achou:
-                            fila.append(w)
-        return achou
+                            found = True
+                        if not found:
+                            queue.append(w)
+        return found
 
     def _is_matched(self, v):
         return self.mate[v] != self.UNMATCHED
@@ -158,27 +161,27 @@ class HopcroftKarp:
 
     def is_perfect(self):
         return self.cardinality == self.bipartition.n
-      
+
 
 def main():
-    dados = sys.stdin.buffer.read().split()
-    n = int(dados[0])
-    m = int(dados[1])
+    data = sys.stdin.buffer.read().split()
+    n = int(data[0])
+    m = int(data[1])
 
-    pares = []
+    pairs = []
     for k in range(m):
-        a = int(dados[2 + 2 * k]) - 1       # entrada e 1..n, vetores sao 0..n-1
-        b = int(dados[3 + 2 * k]) - 1
-        pares.append((a, b))
+        a = int(data[2 + 2 * k]) - 1       # entrada e 1..n, vetores sao 0..n-1
+        b = int(data[3 + 2 * k]) - 1
+        pairs.append((a, b))
 
-    G = constroi_grafo_bipartido(n, pares)
-    hk = HopcroftKarp(G, Biparticao(n))
+    G = build_bipartite_graph(n, pairs)
+    hk = HopcroftKarp(G, Bipartition(n))
 
     if not hk.is_perfect():
         sys.stdout.write("Impossible\n")
     else:
-        saida = "\n".join(str(hk.mate[i] - n + 1) for i in range(n))
-        sys.stdout.write(saida + "\n")
+        output = "\n".join(str(hk.mate[i] - n + 1) for i in range(n))
+        sys.stdout.write(output + "\n")
 
 
 if __name__ == "__main__":
