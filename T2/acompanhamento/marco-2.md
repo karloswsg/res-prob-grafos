@@ -1,17 +1,17 @@
-
 # Marco 2 - Componentes Conexas: Paintball
 
 ## Histórico de Alterações
 
 | Versão | Data       | Descrição da Alteração |
 | :------ | :--------- | :------------------------- |
-| 1.0     | 24/09/2026 | Criação do documento     |
+| 1.0     | 24/09/2026 | Criação do documento |
+| 1.1     | 16/10/2026 | Inclusão do vetor `id[]` e do contador `count` nas tabelas de rastreamento; padronização dos nomes das estruturas conforme a implementação; ajustes de redação |
 
 ---
 
 ## 1. Instância Particular (V=6, E=6)
 
-O Marco 2 trabalha sobre o grafo **de entrada** do problema (relação de visão, não orientada), sem a duplicação em atiradores/alvos usada no Marco 1 — o objetivo aqui é identificar componentes conexas, não construir o emparelhamento.
+O Marco 2 trabalha sobre o grafo **de entrada** do problema (relação de visão, não orientada), sem a duplicação em atiradores e alvos usada no Marco 1. O objetivo aqui é identificar componentes conexas, não construir o emparelhamento.
 
 Instância escolhida, respeitando o máximo V=6, E=6, grafo simples e não dirigido:
 
@@ -69,7 +69,7 @@ C2 = {5, 6}
 
 ## 3. Excentricidades, Raio, Diâmetro, Vértices Centrais e Centro
 
-Excentricidade, raio, diâmetro e centro são calculados **por componente conexa** — não existe distância entre vértices de componentes diferentes, então cada cálculo fica restrito aos vértices do mesmo componente.
+Excentricidade, raio, diâmetro e centro são calculados **por componente conexa**, pois não existe distância entre vértices de componentes diferentes. Cada cálculo fica restrito aos vértices do mesmo componente.
 
 ### Excentricidades
 
@@ -114,48 +114,55 @@ centro(C2) = {5, 6}
 
 - `adj[]`: lista de adjacência do grafo (já apresentada na Seção 2);
 - `marked[]`: vetor booleano indicando se o vértice já foi visitado;
-- `edgeTo[]`: vetor que guarda, para cada vértice visitado, a partir de qual vértice ele foi alcançado — registra a árvore de busca gerada pela DFS;
-- `id[]` (implícito no algoritmo, não detalhado nas tabelas abaixo): identificador do componente ao qual cada vértice pertence, atribuído no momento em que uma nova DFS é iniciada a partir de uma fonte não visitada.
+- `edgeTo[]`: vetor que guarda, para cada vértice visitado, a partir de qual vértice ele foi alcançado, registrando a árvore de busca gerada pela DFS;
+- `id[]`: identificador da componente a que cada vértice pertence, atribuído no momento em que o vértice é alcançado;
+- `count`: contador de componentes já identificadas, incrementado ao fim de cada chamada do laço externo.
 
 ### Algoritmo (DFS recursiva)
 
 ```text
-contador = 0
+count = 0
 para cada vértice v de 1 a n:
     se marked[v] == falso:
-        dfs(v, contador)
-        contador = contador + 1
+        dfs(v, count)
+        count = count + 1
 
-dfs(v, contador):
+dfs(v, count):
     marked[v] = verdadeiro
-    id[v] = contador
+    id[v] = count
     para cada w em adj[v]:
         se marked[w] == falso:
             edgeTo[w] = v
-            dfs(w, contador)
+            dfs(w, count)
 ```
 
-O laço externo garante que todo vértice do grafo seja considerado: sempre que encontra um vértice ainda não marcado, esse vértice é a raiz de uma nova componente, e uma nova chamada de DFS é disparada com um identificador de componente novo. Vértices alcançados durante essa chamada recebem o mesmo `id`, o que é exatamente o critério de agrupamento em componentes.
+O laço externo garante que todo vértice do grafo seja considerado: sempre que encontra um vértice ainda não marcado, esse vértice é a raiz de uma nova componente, e uma nova chamada de DFS é disparada com um valor novo de `count` como identificador. Vértices alcançados durante essa chamada recebem o mesmo `id`, o que é exatamente o critério de agrupamento em componentes.
 
-### Rastreamento — fonte = 1
+### Rastreamento: fonte = 1 (`count = 0`)
 
-| V | edgeTo[] | marked[] |
-| :-: | :------: | :------: |
-| 1 |    -    |    V    |
-| 2 |    1    |    V    |
-| 3 |    2    |    V    |
-| 4 |    2    |    V    |
-| 5 |    -    |    F    |
-| 6 |    -    |    F    |
+| V | marked[] | id[] | edgeTo[] |
+| :-: | :------: | :--: | :------: |
+| 1 |    V    |  0  |    -    |
+| 2 |    V    |  0  |    1    |
+| 3 |    V    |  0  |    2    |
+| 4 |    V    |  0  |    2    |
+| 5 |    F    |  -  |    -    |
+| 6 |    F    |  -  |    -    |
 
-Ordem de visita: 1 → 2 (via lista `1: 2,3,4`) → 3 (a partir de 2, pois 1 já está marcado) → volta a 2 → 4. Os vértices 5 e 6 permanecem não marcados porque não há aresta entre `{1,2,3,4}` e `{5,6}` — confirmando que essas duas componentes são de fato distintas.
+Ao final desta chamada, `count` é incrementado para `1`.
 
-### Rastreamento — fonte = 5
+Ordem de visita: 1 → 2 (via lista `1: 2,3,4`) → 3 (a partir de 2, pois 1 já está marcado) → volta a 2 → 4. Os vértices 5 e 6 permanecem não marcados porque não há aresta entre `{1,2,3,4}` e `{5,6}`, o que confirma que essas duas componentes são de fato distintas.
 
-| V | edgeTo[] | marked[] |
-| :-: | :------: | :------: |
-| 5 |    -    |    V    |
-| 6 |    5    |    V    |
+### Rastreamento: fonte = 5 (`count = 1`)
+
+| V | marked[] | id[] | edgeTo[] |
+| :-: | :------: | :--: | :------: |
+| 5 |    V    |  1  |    -    |
+| 6 |    V    |  1  |    5    |
+
+Ao final, `count = 2`: o grafo possui duas componentes conexas.
+
+Estado final: `marked = [V,V,V,V,V,V]`, `id = [0,0,0,0,1,1]`, `count = 2`.
 
 Como todos os vértices já foram marcados ao final da fonte 1 exceto 5 e 6, o laço externo encontra o vértice 5 não visitado, inicia uma nova DFS (novo `id` de componente) e marca também o 6.
 
@@ -167,10 +174,10 @@ Cada chamada de DFS a partir do laço externo corresponde a exatamente uma compo
 
 ## 5. Complexidade de Tempo e Espaço; Custo das Consultas de Conectividade
 
-### Tempo — pré-processamento (execução das DFS's)
+### Tempo: pré-processamento (execução das DFS's)
 
-- Cada vértice é marcado uma única vez e, uma vez marcado, nunca é revisitado — contribuição O(V).
-- Para cada vértice visitado, percorre-se sua lista de adjacência inteira; somando sobre todos os vértices, cada aresta é examinada no máximo duas vezes (uma a partir de cada extremidade, pois o grafo é não dirigido) — contribuição O(E).
+- Cada vértice é marcado uma única vez e, uma vez marcado, nunca é revisitado, o que contribui com O(V).
+- Para cada vértice visitado, percorre-se sua lista de adjacência inteira; somando sobre todos os vértices, cada aresta é examinada no máximo duas vezes (uma a partir de cada extremidade, pois o grafo é não dirigido), o que contribui com O(E).
 - Total: **O(V + E)**. Na instância (V=6, E=6): O(12).
 
 ### Espaço
@@ -182,7 +189,7 @@ Cada chamada de DFS a partir do laço externo corresponde a exatamente uma compo
 
 ### Custo das consultas de conectividade
 
-- **Antes do pré-processamento** (sem `id[]` calculado), responder "u e v estão no mesmo componente?" exigiria rodar uma busca a cada consulta — O(V+E) por consulta.
-- **Depois do pré-processamento**, com `id[v]` atribuído a cada vértice durante a única passada de DFS's, a mesma consulta se resume a comparar `id[u] == id[v]` — **O(1)** por consulta.
+- **Antes do pré-processamento** (sem `id[]` calculado), responder "u e v estão no mesmo componente?" exigiria rodar uma busca a cada consulta, ao custo de O(V+E) por consulta.
+- **Depois do pré-processamento**, com `id[v]` atribuído a cada vértice durante a única passada de DFS's, a mesma consulta se resume a comparar `id[u] == id[v]`, em **O(1)**.
 
-O padrão geral é: pagar O(V+E) uma única vez para construir `id[]`, e a partir daí toda consulta de conectividade custa tempo constante — investimento inicial linear em troca de consultas praticamente gratuitas depois.
+O padrão geral é: pagar O(V+E) uma única vez para construir `id[]`, e a partir daí toda consulta de conectividade custa tempo constante: um investimento inicial linear em troca de consultas praticamente gratuitas depois.
